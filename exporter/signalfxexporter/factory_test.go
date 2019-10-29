@@ -15,6 +15,7 @@
 package signalfxexporter
 
 import (
+	"go.uber.org/zap"
 	"testing"
 
 	"github.com/open-telemetry/opentelemetry-collector/config/configcheck"
@@ -29,19 +30,19 @@ func TestCreateDefaultConfig(t *testing.T) {
 }
 
 func TestCreateMetricsExporter(t *testing.T) {
-	//factory := &Factory{}
-	//cfg := factory.CreateDefaultConfig()
+	factory := &Factory{}
+	cfg := factory.CreateDefaultConfig()
 
-	//me, err := factory.CreateMetricsExporter(zap.NewNop(), cfg)
-	//assert.Nil(t, err)
-	//assert.NotNil(t, me)
+	me, err := factory.CreateMetricsExporter(zap.NewNop(), cfg)
+	assert.Nil(t, err)
+	assert.NotNil(t, me)
 }
 
 func TestCreateTraceExporter(t *testing.T) {
-	//factory := &Factory{}
-	//cfg := factory.CreateDefaultConfig()
+	factory := &Factory{}
+	cfg := factory.CreateDefaultConfig()
 
-	//te, err := factory.CreateTraceExporter(zap.NewNop(), cfg)
-	//assert.Nil(t, err)
-	//assert.NotNil(t, te)
+	te, err := factory.CreateTraceExporter(zap.NewNop(), cfg)
+	assert.Nil(t, err)
+	assert.NotNil(t, te)
 }

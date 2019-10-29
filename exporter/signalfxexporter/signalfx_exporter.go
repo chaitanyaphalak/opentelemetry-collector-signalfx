@@ -16,60 +16,65 @@ package signalfxexporter
 
 import (
 	"context"
+	"github.com/open-telemetry/opentelemetry-collector/config/configmodels"
 	"github.com/open-telemetry/opentelemetry-collector/consumer/consumerdata"
 	"github.com/open-telemetry/opentelemetry-collector/exporter"
+	"github.com/open-telemetry/opentelemetry-collector/exporter/exporterhelper"
 	"github.com/signalfx/golib/sfxclient"
 )
 
-type signalExporter struct {
-	name     string
+type signalFxExporter struct {
 	client* sfxclient.HTTPSink
 }
 
-const (
-	DefaultDatapointEndpointURL      = "https://ingest.signalfx.com/v2/datapoint"
-	DefaultTracesEndpointURL      = "https://ingest.signalfx.com/v2/traces"
-)
-
-func NewSignalfxMetricsExporter(datapointEndpoint string, authToken string, name string) *signalExporter {
-	var signalfxmetrics* signalExporter = new(signalExporter)
-	signalfxmetrics.client = sfxclient.NewHTTPSink()
-	// modify endpoints if needed
-	signalfxmetrics.client.DatapointEndpoint = datapointEndpoint
-	signalfxmetrics.client.AuthToken = authToken
-	signalfxmetrics.name = name
-
-	return signalfxmetrics
+func (*signalFxExporter) Name() string {
+	return "signalfx"
 }
 
-func (se *signalExporter) Start(host exporter.Host) error {
+func (sfxe *signalFxExporter) Shutdown() error {
 	return nil
 }
 
-func (se *signalExporter) ConsumeMetricsData(ctx context.Context, md consumerdata.MetricsData) error {
-	return nil
+func NewTraceExporter(config configmodels.Exporter, client* sfxclient.HTTPSink) (exporter.TraceExporter, error) {
+	sfxe := &signalFxExporter{client: client}
+
+	exp , err := exporterhelper.NewTraceExporter(
+		config,
+		sfxe.PushTraceData,
+		exporterhelper.WithTracing(true),
+		exporterhelper.WithMetrics(true),
+		exporterhelper.WithShutdown(sfxe.Shutdown),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return exp, nil
 }
 
-func (se *signalExporter) Name() string {
-	return se.name
+func (sfxe *signalFxExporter) PushTraceData(ctx context.Context, td consumerdata.TraceData) (int, error) {
+	return 0, nil
 }
 
-// Shutdown stops the exporter and is invoked during shutdown.
-func (se *signalExporter) Shutdown() error {
-	return nil
+func (sfxe *signalFxExporter) PushMetricsData(ctx context.Context, md consumerdata.MetricsData) (int, error) {
+	return 0, nil
 }
 
-func NewSignalfxTraceExporter(traceEndpoint string, authToken string, name string) *signalExporter {
-	var signalfxtraces* signalExporter = new(signalExporter)
-	signalfxtraces.client = sfxclient.NewHTTPSink()
-	// modify endpoints if needed
-	signalfxtraces.client.TraceEndpoint = traceEndpoint
-	signalfxtraces.client.AuthToken = authToken
-	signalfxtraces.name = name
+func NewMetricsExporter(config configmodels.Exporter, client* sfxclient.HTTPSink) (exporter.MetricsExporter, error) {
+	sfxe := &signalFxExporter{client: client}
 
-	return signalfxtraces
-}
+	exp , err := exporterhelper.NewMetricsExporter(
+		config,
+		sfxe.PushMetricsData,
+		exporterhelper.WithTracing(true),
+		exporterhelper.WithMetrics(true),
+		exporterhelper.WithShutdown(sfxe.Shutdown),
+	)
 
-func (ze *signalExporter) ConsumeTraceData(ctx context.Context, td consumerdata.TraceData) (zerr error) {
-	return nil
+	if err != nil {
+		return nil, err
+	}
+
+	return exp, nil
 }

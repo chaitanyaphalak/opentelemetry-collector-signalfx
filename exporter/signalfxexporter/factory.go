@@ -16,6 +16,7 @@ package signalfxexporter
 
 import (
 	"errors"
+	"github.com/signalfx/golib/sfxclient"
 	"go.uber.org/zap"
 
 	"github.com/open-telemetry/opentelemetry-collector/config/configmodels"
@@ -43,35 +44,54 @@ func (f *Factory) CreateDefaultConfig() configmodels.Exporter {
 			TypeVal: typeStr,
 			NameVal: typeStr,
 		},
-		AuthToken: "",
+		AuthToken: "rhy8R-BiL_GbMZUgCenVwg",
 		DatapointEndpoint: "https://ingest.us1.signalfx.com/v2/datapoint",
 		TraceEndpoint: "https://ingest.us1.signalfx.com/v2/trace",
 	}
 }
 
-// CreateTraceExporter creates a trace exporter based on this config.
-func (f *Factory) CreateTraceExporter(logger *zap.Logger, config configmodels.Exporter) (exporter.TraceExporter, error) {
+func (f *Factory) createSignalFxClient(config configmodels.Exporter) (*sfxclient.HTTPSink, error) {
 	cfg := config.(*Config)
-	if cfg.TraceEndpoint == "" {
-		return nil, errors.New("exporter config requires a non-empty 'TraceEndpoint'")
-	}
+	var signalFxClient = sfxclient.NewHTTPSink()
+	// modify endpoints if needed
+	signalFxClient.DatapointEndpoint = cfg.DatapointEndpoint
+	signalFxClient.TraceEndpoint = cfg.TraceEndpoint
 	if cfg.AuthToken == "" {
 		return nil, errors.New("exporter config requires a non-empty 'AuthToken'")
 	}
-	exp := NewSignalfxTraceExporter(cfg.TraceEndpoint, cfg.AuthToken, cfg.Name())
-	return exp, nil
+	signalFxClient.AuthToken = cfg.AuthToken
+	return signalFxClient, nil
+}
+
+// CreateTraceExporter creates a trace exporter based on this config.
+func (f *Factory) CreateTraceExporter(logger *zap.Logger, config configmodels.Exporter) (exporter.TraceExporter, error) {
+	cfg := config.(*Config)
+	client, err := f.createSignalFxClient(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	traceExp, err := NewTraceExporter(config, client)
+	if err != nil {
+		return nil, err
+	}
+
+	return traceExp, err
 }
 
 // CreateMetricsExporter creates a metrics exporter based on this config.
 func (f *Factory) CreateMetricsExporter(logger *zap.Logger, config configmodels.Exporter) (exporter.MetricsExporter, error) {
 	cfg := config.(*Config)
-	if cfg.DatapointEndpoint == "" {
-		return nil, errors.New("exporter config requires a non-empty 'DatapointEndpoint'")
+	client, err := f.createSignalFxClient(cfg)
+	if err != nil {
+		return nil, err
 	}
-	if cfg.AuthToken == "" {
-		return nil, errors.New("exporter config requires a non-empty 'AuthToken'")
+
+	metricsExp, err := NewMetricsExporter(config, client)
+	if err != nil {
+		return nil, err
 	}
-	exp := NewSignalfxMetricsExporter(cfg.DatapointEndpoint, cfg.AuthToken, cfg.Name())
-	return exp, nil
+
+	return metricsExp, err
 }
 

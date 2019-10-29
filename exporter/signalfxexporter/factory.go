@@ -43,6 +43,7 @@ func (f *Factory) CreateDefaultConfig() configmodels.Exporter {
 			TypeVal: typeStr,
 			NameVal: typeStr,
 		},
+		AuthToken: "",
 		DatapointEndpoint: "https://ingest.us1.signalfx.com/v2/datapoint",
 		TraceEndpoint: "https://ingest.us1.signalfx.com/v2/trace",
 	}

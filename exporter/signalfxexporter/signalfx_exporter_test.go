@@ -20,11 +20,11 @@ import (
 )
 
 func TestSignalfxTraceExporterNoErrors(t *testing.T) {
-	exp := NewSignalfxMetricsExporter("https://ingest.signalfx.com/v2/traces", "dummy")
+	exp := NewSignalfxMetricsExporter("https://ingest.signalfx.com/v2/traces", "dummy", "SignalfxTraceExporter")
 	require.NotNil(t, exp)
 }
 
 func TestSignalfxMetricsExporterNoErrors(t *testing.T) {
-	exp := NewSignalfxMetricsExporter("https://ingest.signalfx.com/v2/datapoint", "dummy")
+	exp := NewSignalfxMetricsExporter("https://ingest.signalfx.com/v2/datapoint", "dummy", "SignalfxMetricsExporter")
 	require.NotNil(t, exp)
 }

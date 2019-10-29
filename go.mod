@@ -36,7 +36,7 @@ require (
 	github.com/rs/cors v1.6.0
 	github.com/signalfx/com_signalfx_metrics_protobuf v0.0.0-20190530013331-054be550cb49 // indirect
 	github.com/signalfx/gohistogram v0.0.0-20160107210732-1ccfd2ff5083 // indirect
-	github.com/signalfx/golib v2.5.1+incompatible // indirect
+	github.com/signalfx/golib v2.5.1+incompatible
 	github.com/soheilhy/cmux v0.1.4
 	github.com/spf13/cast v1.3.0
 	github.com/spf13/cobra v0.0.5

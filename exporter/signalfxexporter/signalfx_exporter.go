@@ -56,7 +56,7 @@ func (se *signalExporter) Name() string {
 
 // Shutdown stops the exporter and is invoked during shutdown.
 func (se *signalExporter) Shutdown() error {
-	return se.shutdown()
+	return nil
 }
 
 func NewSignalfxTraceExporter(traceEndpoint string, authToken string, name string) *signalExporter {

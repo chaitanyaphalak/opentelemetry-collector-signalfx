@@ -24,7 +24,7 @@ type Config struct {
 	// AuthToken is the authentication token used to authorize with signalfx
 	AuthToken string `mapstructure:"authtoken"`
 	// DatapointEndpoint is url for sending metrics to signalfx
-	DatapointEndpoint string `mapstructure:"DatapointEndpoint"`
+	DatapointEndpoint string `mapstructure:"datapointendpoint"`
 	// TraceEndpoint is url for sending traces to signalfx
-	TraceEndpoint string `mapstructure:"TraceEndpoint"`
+	TraceEndpoint string `mapstructure:"traceendpoint"`
 }

@@ -1,0 +1,317 @@
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: sck
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes
+  - nodes/proxy
+  - services
+  - endpoints
+  - pods
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["persistentvolumes"]
+  verbs: ["get", "list", "watch", "create", "delete"]
+- apiGroups: [""]
+  resources: ["persistentvolumeclaims"]
+  verbs: ["get", "list", "watch", "update"]
+- apiGroups: ["storage.k8s.io"]
+  resources: ["storageclasses"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "update", "patch"]
+- apiGroups: [""]
+  resources: ["services"]
+  resourceNames: ["kube-dns","coredns"]
+  verbs: ["list", "get"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get"]
+- apiGroups: [""]
+  resources: ["endpoints"]
+  verbs: ["get", "list", "watch", "create", "update", "patch"]
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sck
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: sck
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sck
+subjects:
+- kind: ServiceAccount
+  name: sck
+  namespace: default
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-conf
+  namespace: default
+  labels:
+    app: opentelemetry
+    component: otel-collector-conf
+data:
+  otel-collector-config: |
+    receivers:
+      opencensus:
+        keepalive:
+          server_parameters:
+            max_connection_age: 120s
+      jaeger: 
+        protocols:
+          thrift-http:
+            endpoint: "localhost:14268"
+      prometheus:
+        config:
+          scrape_configs: 
+            - job_name: fake_exporter
+              params:
+                metrics: [128]
+                seed: [0]
+              metrics_path: /metrics
+              static_configs:
+              - targets:
+                - prom-data-gen:8888
+                labels:
+                  app: fake_exporter_1
+
+            - job_name: 'kubernetes-apiservers'
+              kubernetes_sd_configs:
+              - role: endpoints
+              scheme: https
+              tls_config:
+                ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+              relabel_configs:
+              - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+                action: keep
+                regex: default;kubernetes;https
+
+            - job_name: 'kubernetes-nodes'
+              scheme: https
+              tls_config:
+                ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+              kubernetes_sd_configs:
+              - role: node
+              relabel_configs:
+              - action: labelmap
+                regex: __meta_kubernetes_node_label_(.+)
+              - target_label: __address__
+                replacement: kubernetes.default.svc:443
+              - source_labels: [__meta_kubernetes_node_name]
+                regex: (.+)
+                target_label: __metrics_path__
+                replacement: /api/v1/nodes/${1}/proxy/metrics
+            
+            - job_name: 'kubernetes-pods'
+              kubernetes_sd_configs:
+              - role: pod
+              relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+                action: keep
+                regex: true
+              - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+                action: replace
+                target_label: __metrics_path__
+                regex: (.+)
+              - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+                action: replace
+                regex: ([^:]+)(?::\d+)?;(\d+)
+                replacement: $1:$2
+                target_label: __address__
+              - action: labelmap
+                regex: __meta_kubernetes_pod_label_(.+)
+              - source_labels: [__meta_kubernetes_namespace]
+                action: replace
+                target_label: kubernetes_namespace
+              - source_labels: [__meta_kubernetes_pod_name]
+                action: replace
+                target_label: kubernetes_pod_name
+
+            - job_name: 'kubernetes-cadvisor'
+              scheme: https
+              tls_config:
+                ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+              kubernetes_sd_configs:
+              - role: node
+              relabel_configs:
+              - action: labelmap
+                regex: __meta_kubernetes_node_label_(.+)
+              - target_label: __address__
+                replacement: kubernetes.default.svc:443
+              - source_labels: [__meta_kubernetes_node_name]
+                regex: (.+)
+                target_label: __metrics_path__
+                replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
+
+            # - job_name: 'kubernetes-service-endpoints'
+            #   kubernetes_sd_configs:
+            #   - role: endpoints
+            #   relabel_configs:
+            #   - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+            #     action: keep
+            #     regex: true
+            #   - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+            #     action: replace
+            #     target_label: __scheme__
+            #     regex: (https?)
+            #   - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+            #     action: replace
+            #     target_label: __metrics_path__
+            #     regex: (.+)
+            #   - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+            #     action: replace
+            #     target_label: __address__
+            #     regex: ([^:]+)(?::\d+)?;(\d+)
+            #     replacement: $1:$2
+            #   - action: labelmap
+            #     regex: __meta_kubernetes_service_label_(.+)
+            #   - source_labels: [__meta_kubernetes_namespace]
+            #     action: replace
+            #     target_label: kubernetes_namespace
+            #   - source_labels: [__meta_kubernetes_service_name]
+            #     action: replace
+            #     target_label: kubernetes_name
+      zipkin: {}
+
+    processors:
+      batch:
+        timeout: 5s
+        send_batch_size: 1024
+
+    exporters:
+      logging:
+        loglevel: debug
+      # prometheus:
+      #   endpoint: "localhost:8889"
+      signalfx_trace:
+        headers: {"X-SF-TOKEN": "$SIGNALFX_API_TOKEN", "Content-Type": "application/x-thrift"}
+        timeout: 5
+        url: "https://ingest.us1.signalfx.com:443/v2/trace"
+      signalfx_metric:
+        headers: {"X-SF-TOKEN": "8QZFJ2nVcd0RvDnkCYgeEQ", "Content-Type": "application/x-thrift"}
+        timeout: 5
+        url: "https://ingest.us1.signalfx.com:443/v2/datapoint"
+
+    service:
+      pipelines:
+        # traces:
+        #   receivers: [jaeger]
+        #   processors: [batch]
+        #   exporters: [signalfx_trace]
+        metrics:
+          receivers: [prometheus]
+          # processors: [batch]
+          # exporters: [signalfx_metric]
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector
+  namespace: default
+  labels:
+    app: opencesus
+    component: otel-collector
+spec:
+  ports:
+  - name: opencensus
+    port: 55678
+    protocol: TCP
+    targetPort: 55678
+  - name: jaeger-tchannel
+    port: 14267
+  - name: jaeger-thrift-http
+    port: 14268
+  - name: zipkin
+    port: 9411
+  - name: prometheus
+    port: 8888
+  - name: prometheus-export
+    port: 8889
+  selector:
+    component: otel-collector
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: otel-collector
+  namespace: default
+  labels:
+    app: opentelemetry
+    component: otel-collector
+spec:
+  strategy:
+    type: Recreate
+  minReadySeconds: 5
+  progressDeadlineSeconds: 120
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8888"
+        prometheus.io/scrape: "true"
+      labels:
+        app: opentelemetry
+        component: otel-collector
+    spec:
+      serviceAccountName: sck
+      containers:
+      - command:
+          - "/otelcol"
+          - "--config=/conf/otel-collector-config.yaml"
+        env:
+        - name: GOGC
+          value: "80"
+        image: rock1017/otelcol:latest
+        name: otel-collector
+        resources:
+          limits:
+            cpu: 1
+            memory: 2Gi
+          requests:
+            cpu: 200m
+            memory: 400Mi
+        ports:
+        - containerPort: 55678
+        - containerPort: 14267
+        - containerPort: 14268
+        - containerPort: 9411
+        - containerPort: 8888
+        - containerPort: 8889
+        volumeMounts:
+        - name: otel-collector-config-vol
+          mountPath: /conf
+#        - name: otel-collector-secrets
+#          mountPath: /secrets
+      volumes:
+        - configMap:
+            name: otel-collector-conf
+            items:
+              - key: otel-collector-config
+                path: otel-collector-config.yaml
+          name: otel-collector-config-vol
+#        - secret:
+#            name: otel-collector-secrets
+#            items:
+#              - key: cert.pem
+#                path: cert.pem
+#              - key: key.pem
+#                path: key.pem

@@ -1,0 +1,20 @@
+receivers:
+  examplereceiver:
+
+processors:
+  exampleprocessor:
+
+exporters:
+  signalfx:
+  signalfx/2:
+    datapointEndpoint: "https://ingest.us1.signalfx.com/v2/datapoint"
+    traceEndpoint: "https://ingest.us1.signalfx.com/v2/trace"
+service:
+  pipelines:
+    traces:
+      receivers: [examplereceiver]
+      processors: [exampleprocessor]
+      exporters: [signalfx]
+    metrics:
+      receivers: [examplereceiver]
+      exporters: [signalfx,signalfx/2]

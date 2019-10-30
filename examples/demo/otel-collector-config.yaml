@@ -1,20 +1,40 @@
 receivers:
-  opencensus:
-    endpoint: 0.0.0.0:55678
+#  opencensus:
+#    endpoint: 0.0.0.0:55678
+  prometheus:
+    config:
+      scrape_configs:
+          - job_name: fake_exporter
+            params:
+              metrics: [128]
+              seed: [0]
+            metrics_path: /metrics
+            static_configs:
+              - targets:
+                  - localhost:10008
+                labels:
+                  app: fake_exporter_1
+
 
 exporters:
-  prometheus:
-    endpoint: "0.0.0.0:8889"
-    namespace: promexample
-    const_labels:
-      label1: value1
+#  prometheus:
+#    endpoint: "0.0.0.0:8889"
+#    namespace: promexample
+#    const_labels:
+#      label1: value1
   logging:
+    loglevel: debug
 
-  zipkin:
-    url: "http://zipkin-all-in-one:9411/api/v2/spans"
+#  zipkin:
+#    url: "http://zipkin-all-in-one:9411/api/v2/spans"
+#
+#  jaeger_grpc:
+#    endpoint: jaeger-all-in-one:14250
 
-  jaeger_grpc:
-    endpoint: jaeger-all-in-one:14250
+  signalfx:
+    datapointEndpoint: "https://ingest.us1.signalfx.com/v2/datapoint"
+    traceEndpoint: "https://ingest.us1.signalfx.com/v2/trace"
+    authtoken: "rhy8R-BiL_GbMZUgCenVwg"
 
 # Alternatively, use jaeger_thrift_http with the settings below. In this case
 # update the list of exporters on the traces pipeline.
@@ -23,24 +43,24 @@ exporters:
 #    url: http://jaeger-all-in-one:14268/api/traces
 
 processors:
-  batch:
-  queued_retry:
+#  batch:
+#  queued_retry:
 
 extensions:
-  health_check:
-  pprof:
-    endpoint: :1888
-  zpages:
-    endpoint: :55679
+#  health_check:
+#  pprof:
+#    endpoint: :1888
+#  zpages:
+#    endpoint: :55679
 
 service:
-  extensions: [pprof, zpages, health_check]
+#  extensions: [pprof, zpages, health_check]
   pipelines:
-    traces:
-      receivers: [opencensus]
-      exporters: [logging, zipkin, jaeger_grpc]
-      processors: [batch, queued_retry]
+#    traces:
+#      receivers: [opencensus]
+#      exporters: [logging, zipkin, jaeger_grpc, signalfx]
+#      processors: [batch, queued_retry]
     metrics:
-      receivers: [opencensus]
-      exporters: [logging,prometheus]
+      receivers: [prometheus]
+      exporters: [signalfx]
 

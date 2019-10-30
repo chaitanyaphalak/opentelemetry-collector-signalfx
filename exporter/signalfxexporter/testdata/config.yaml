@@ -6,9 +6,9 @@ processors:
 
 exporters:
   signalfx:
-  signalfx/2:
     datapointEndpoint: "https://ingest.us1.signalfx.com/v2/datapoint"
     traceEndpoint: "https://ingest.us1.signalfx.com/v2/trace"
+
 service:
   pipelines:
     traces:
@@ -17,4 +17,4 @@ service:
       exporters: [signalfx]
     metrics:
       receivers: [examplereceiver]
-      exporters: [signalfx,signalfx/2]
+      exporters: [signalfx]

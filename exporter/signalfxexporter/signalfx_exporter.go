@@ -56,11 +56,26 @@ func NewTraceExporter(config configmodels.Exporter, client* sfxclient.HTTPSink) 
 
 func (sfxe *signalFxExporter) PushTraceData(ctx context.Context, td consumerdata.TraceData) (int, error) {
 	fmt.Println("PushTraceData")
+	//var errs []error
+	//goodSpans := 0
+	//for _, span := range td.Spans {
+	//	sd, err := spandatatranslator.ProtoSpanToOCSpanData(span)
+	//	if err == nil {
+	//		se.exporter.ExportSpan(sd)
+	//		goodSpans++
+	//	} else {
+	//		errs = append(errs, err)
+	//	}
+	//}
+	//
+	//return len(td.Spans) - goodSpans, oterr.CombineErrors(errs)
 	return 0, nil
 }
 
 func (sfxe *signalFxExporter) PushMetricsData(ctx context.Context, md consumerdata.MetricsData) (int, error) {
-	fmt.Println("PushMetricsData")
+	for _, metric := range md.Metrics {
+		fmt.Println("PushMetricsData: " + metric.String() + " " + md.Node.String() + " " + md.Resource.String())
+	}
 	return 0, nil
 }
 

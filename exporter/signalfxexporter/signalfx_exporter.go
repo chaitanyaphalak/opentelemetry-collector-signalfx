@@ -16,6 +16,7 @@ package signalfxexporter
 
 import (
 	"context"
+	"fmt"
 	"github.com/open-telemetry/opentelemetry-collector/config/configmodels"
 	"github.com/open-telemetry/opentelemetry-collector/consumer/consumerdata"
 	"github.com/open-telemetry/opentelemetry-collector/exporter"
@@ -54,10 +55,12 @@ func NewTraceExporter(config configmodels.Exporter, client* sfxclient.HTTPSink) 
 }
 
 func (sfxe *signalFxExporter) PushTraceData(ctx context.Context, td consumerdata.TraceData) (int, error) {
+	fmt.Println("PushTraceData")
 	return 0, nil
 }
 
 func (sfxe *signalFxExporter) PushMetricsData(ctx context.Context, md consumerdata.MetricsData) (int, error) {
+	fmt.Println("PushMetricsData")
 	return 0, nil
 }
 

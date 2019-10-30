@@ -17,7 +17,7 @@ require (
 	github.com/go-kit/kit v0.9.0
 	github.com/gogo/googleapis v1.3.0 // indirect
 	github.com/golang/protobuf v1.3.2
-	github.com/google/addlicense v0.0.0-20190510175307-22550fa7c1b0
+	github.com/google/addlicense v0.0.0-20190907113143-be125746c2c4
 	github.com/google/go-cmp v0.3.1
 	github.com/gorilla/mux v1.7.3
 	github.com/grpc-ecosystem/grpc-gateway v1.11.1
@@ -25,6 +25,7 @@ require (
 	github.com/jaegertracing/jaeger v1.14.0
 	github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024
 	github.com/mitchellh/mapstructure v1.1.2
+	github.com/open-telemetry/opentelemetry-collector-contrib v0.0.0-20191021165924-bb954188ac10 // indirect
 	github.com/openzipkin/zipkin-go v0.2.1
 	github.com/orijtech/prometheus-go-metrics-exporter v0.0.3-0.20190313163149-b321c5297f60
 	github.com/pkg/errors v0.8.1
@@ -49,9 +50,9 @@ require (
 	github.com/uber/tchannel-go v1.10.0
 	go.opencensus.io v0.22.1
 	go.uber.org/zap v1.10.0
-	golang.org/x/lint v0.0.0-20190409202823-959b441ac422
+	golang.org/x/lint v0.0.0-20190909230951-414d861bb4ac
 	golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a
-	golang.org/x/tools v0.0.0-20190906203814-12febf440ab1
+	golang.org/x/tools v0.0.0-20190917162342-3b4f30a44f3b
 	google.golang.org/api v0.10.0
 	google.golang.org/grpc v1.23.0
 	gopkg.in/yaml.v2 v2.2.2

@@ -8,7 +8,7 @@ metadata:
     component: prom-data-gen
 spec:
   ports:
-  - name: prometheus
+  - name: http-prometheus
     port: 8888
   selector:
     component: prom-data-gen
@@ -27,9 +27,11 @@ spec:
     metadata:
       labels:
         component: prom-data-gen
+        apm: signalfx
     spec:
       containers:
         - image: rock1017/prom-fake-gen:latest
           name: prom-data-gen
           ports:
           - containerPort: 8888
+            name: http-prometheus

@@ -1,0 +1,5 @@
+helm repo add signalfx https://dl.signalfx.com/helm-repo
+helm repo update
+
+# Edit SignalFX Token then
+helm install --name signalfx-smart-agent -f smart-agent-values.yaml signalfx/signalfx-agent

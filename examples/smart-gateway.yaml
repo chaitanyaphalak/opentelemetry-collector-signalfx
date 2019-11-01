@@ -1,0 +1,87 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sgw
+  namespace: default
+  labels:
+    component: sgw
+data:
+  gateway.conf: |
+    {
+      "ServerName": "smart-gateway-1",
+      "ClusterName": "prod",
+      "LogDir": "-",
+      "ListenFrom": [
+        {
+          "Type": "signalfx",
+          "ListenAddr": "0.0.0.0:8080"
+        }
+      ],
+      "ForwardTo": [
+        {
+          "Type": "signalfx",
+          "URL": "https://ingest.us1.signalfx.com/v2/datapoint",
+          "EventURL": "https://ingest.us1.signalfx.com/v2/event",
+          "TraceURL": "https://ingest.us1.signalfx.com/v1/trace",
+          "DefaultAuthToken": "5OPErbPkX-ptZYNlLIoqKA",
+          "Name": "smart-gateway-forwarder",
+          "TraceSample": {
+            "BackupLocation": "/var/lib/gateway/data"
+          }
+        }
+      ]
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sgw
+  namespace: default
+  labels:
+    component: sgw
+spec:
+  ports:
+  - name: http-sgw
+    port: 8080
+    targetPort: 8080
+  selector:
+    component: sgw
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: sgw
+  namespace: default
+  labels:
+    component: sgw
+spec:
+  minReadySeconds: 5
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        component: sgw
+    spec:
+      containers:
+      - image: rock1017/sgw:latest
+        name: sgw
+        ports:
+        - containerPort: 8080
+          name: http-sgw
+        volumeMounts:
+        - name: conf
+          mountPath: /var/lib/gateway/etc
+        # - name: host
+        #   mountPath: /var/lib/gateway
+      volumes:
+        # - name: host
+        #   hostPath:
+        #     path: /var/lib/gateway
+        - name: conf
+          configMap:
+            name: sgw
+            items:
+              - key: gateway.conf
+                path: gateway.conf
+          

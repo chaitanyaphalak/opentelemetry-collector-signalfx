@@ -66,14 +66,10 @@ metadata:
 data:
   otel-collector-config: |
     receivers:
-      opencensus:
-        keepalive:
-          server_parameters:
-            max_connection_age: 120s
       jaeger: 
         protocols:
           thrift-http:
-            endpoint: "localhost:14268"
+            endpoint: ":14268"
       prometheus:
         config:
           scrape_configs: 
@@ -197,26 +193,41 @@ data:
     exporters:
       logging:
         loglevel: debug
-      # prometheus:
-      #   endpoint: "localhost:8889"
-      signalfx_trace:
-        headers: {"X-SF-TOKEN": "$SIGNALFX_API_TOKEN", "Content-Type": "application/x-thrift"}
+      prometheus:
+        endpoint: "localhost:8889"
+      jaeger_thrift_http:
+        headers: {"X-test-header": "test-header"}
         timeout: 5
-        url: "https://ingest.us1.signalfx.com:443/v2/trace"
-      signalfx_metric:
+        url: "http://jaeger-collector.istio-system.svc.cluster.local:14268/api/traces"
+      jaeger_thrift_http/signalfx:
         headers: {"X-SF-TOKEN": "8QZFJ2nVcd0RvDnkCYgeEQ", "Content-Type": "application/x-thrift"}
         timeout: 5
-        url: "https://ingest.us1.signalfx.com:443/v2/datapoint"
+        url: "https://ingest.us1.signalfx.com/v1/trace"
+      jaeger_thrift_http/signalfx-agent:
+        url: "http://$SIGNALFX_AGENT_HOST:9080/vi/trace"
+
+
+
+      # signalfx_trace:
+      #   headers: {"X-SF-TOKEN": "$SIGNALFX_API_TOKEN", "Content-Type": "application/x-thrift"}
+      #   timeout: 5
+      #   url: "https://ingest.us1.signalfx.com:443/v2/trace"
+      # signalfx_metric:
+      #   headers: {"X-SF-TOKEN": "8QZFJ2nVcd0RvDnkCYgeEQ", "Content-Type": "application/x-thrift"}
+      #   timeout: 5
+      #   url: "https://ingest.us1.signalfx.com:443/v2/datapoint"
 
     service:
       pipelines:
         # traces:
         #   receivers: [jaeger]
         #   processors: [batch]
-        #   exporters: [signalfx_trace]
+        #   exporters: [jaeger_thrift_http, jaeger_thrift_http/signalfx]
+          # exporters: [signalfx_trace]
         metrics:
           receivers: [prometheus]
-          # processors: [batch]
+          processors: []
+          exporters: [prometheus]
           # exporters: [signalfx_metric]
 
 
@@ -237,13 +248,13 @@ spec:
     targetPort: 55678
   - name: jaeger-tchannel
     port: 14267
-  - name: jaeger-thrift-http
+  - name: http-jaeger-thrift-http
     port: 14268
   - name: zipkin
     port: 9411
-  - name: prometheus
+  - name: http-prometheus
     port: 8888
-  - name: prometheus-export
+  - name: http-prometheus-export
     port: 8889
   selector:
     component: otel-collector
@@ -267,7 +278,7 @@ spec:
       annotations:
         prometheus.io/path: "/metrics"
         prometheus.io/port: "8888"
-        prometheus.io/scrape: "true"
+        prometheus.io/scrape: "false"
       labels:
         app: opentelemetry
         component: otel-collector
@@ -280,6 +291,11 @@ spec:
         env:
         - name: GOGC
           value: "80"
+        - name: SIGNALFX_AGENT_HOST
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
         image: rock1017/otelcol:latest
         name: otel-collector
         resources:

@@ -261,9 +261,17 @@ spec:
           - "/opt/omnition/start.sh"
         env:
         - name: JAEGER_COLLECTOR_URL
+          #value: "http://$SIGNALFX_AGENT_HOST:9080/v1/trace"
+          #value: "http://sgw:8080/v1/trace"
           value: "http://otel-collector:14268"
+          #value: "http://jaeger-collector.istio-system.svc.cluster.local:14268"
         - name: TOPOLOGY_FILE
           value: "/opt/omnition/topologies/hipster-shop.json"
+        - name: SIGNALFX_AGENT_HOST
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
         image: rock1017/synthetic-load-generator:latest
         name: data-gen
         resources:
